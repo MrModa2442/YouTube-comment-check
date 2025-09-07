@@ -1,0 +1,5 @@
+{
+  "name": "YouTube Comment Music Analyzer",
+  "description": "An AI-powered tool to fetch actual comments from a YouTube video URL and analyze them to identify user inquiries about background music, extracting relevant timestamps. Uses Gemini API for analysis and requires a YouTube Data API v3 key.",
+  "requestFramePermissions": []
+}

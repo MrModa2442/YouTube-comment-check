@@ -1,16 +1,28 @@
-
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 import { AnalysisResult } from '../types';
 import { fetchYouTubeComments, YouTubeComment } from './youtubeService';
 
-const GEMINI_API_KEY = process.env.API_KEY;
-
-if (!GEMINI_API_KEY) {
-  console.error("CRITICAL: API_KEY for Gemini is not set in environment variables. The application will not function correctly.");
-}
-
-const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY! });
+// Lazily initialize the GoogleGenAI client to prevent app crash on load if API key is missing.
+let ai: GoogleGenAI | null = null;
 const MODEL_TEXT_ANALYSIS = "gemini-2.5-flash";
+
+/**
+ * Gets the singleton instance of the GoogleGenAI client.
+ * Throws an error if the API key is not configured.
+ * @returns {GoogleGenAI} The initialized GoogleGenAI client.
+ */
+const getGenAIClient = (): GoogleGenAI => {
+    const GEMINI_API_KEY = process.env.API_KEY;
+    if (!GEMINI_API_KEY) {
+        console.error("CRITICAL: API_KEY for Gemini is not set in environment variables.");
+        throw new Error("Gemini API Key is not configured. Please set the API_KEY environment variable.");
+    }
+
+    if (!ai) {
+        ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
+    }
+    return ai;
+};
 
 // Enhanced helper function to parse timestamp strings to seconds
 const parseTimestampToSeconds = (timestampStr: string): number | null => {
@@ -255,9 +267,6 @@ ${commentsBlock}
 };
 
 export const analyzeFetchedYouTubeComments = async (commentsBlock: string): Promise<AnalysisResult[]> => {
-  if (!GEMINI_API_KEY) {
-    throw new Error("Gemini API Key is not configured. Please set the API_KEY environment variable.");
-  }
   if (!commentsBlock || commentsBlock.trim() === "") {
     console.warn("analyzeFetchedYouTubeComments called with empty or no comments block.");
     return [];
@@ -265,7 +274,8 @@ export const analyzeFetchedYouTubeComments = async (commentsBlock: string): Prom
 
   const prompt = createAnalysisPromptForFetchedComments(commentsBlock);
   try {
-    const response: GenerateContentResponse = await ai.models.generateContent({
+    const client = getGenAIClient();
+    const response: GenerateContentResponse = await client.models.generateContent({
       model: MODEL_TEXT_ANALYSIS,
       contents: prompt,
       config: {
@@ -348,10 +358,6 @@ export const analyzeFetchedYouTubeComments = async (commentsBlock: string): Prom
 };
 
 export const fetchAndAnalyzeVideoComments = async (videoId: string): Promise<{commentsFetched: number, analysisResults: AnalysisResult[]}> => {
-  if (!GEMINI_API_KEY) {
-    throw new Error("Gemini API Key is not configured. Cannot proceed.");
-  }
-
   let fetchedComments: YouTubeComment[] = [];
   try {
     fetchedComments = await fetchYouTubeComments(videoId);

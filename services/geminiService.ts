@@ -2,26 +2,20 @@ import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 import { AnalysisResult } from '../types';
 import { fetchYouTubeComments, YouTubeComment } from './youtubeService';
 
-// Lazily initialize the GoogleGenAI client to prevent app crash on load if API key is missing.
-let ai: GoogleGenAI | null = null;
 const MODEL_TEXT_ANALYSIS = "gemini-2.5-flash";
 
 /**
- * Gets the singleton instance of the GoogleGenAI client.
- * Throws an error if the API key is not configured.
+ * Creates an instance of the GoogleGenAI client with the provided API key.
+ * Throws an error if the API key is not provided.
+ * @param {string} apiKey The user's Gemini API key.
  * @returns {GoogleGenAI} The initialized GoogleGenAI client.
  */
-const getGenAIClient = (): GoogleGenAI => {
-    const GEMINI_API_KEY = process.env.API_KEY;
-    if (!GEMINI_API_KEY) {
-        console.error("CRITICAL: API_KEY for Gemini is not set in environment variables.");
-        throw new Error("Gemini API Key is not configured. Please set the API_KEY environment variable.");
+const getGenAIClient = (apiKey: string): GoogleGenAI => {
+    if (!apiKey) {
+        console.error("CRITICAL: API_KEY for Gemini was not provided to getGenAIClient.");
+        throw new Error("Gemini API Key is not configured. Please provide the API Key in the input field.");
     }
-
-    if (!ai) {
-        ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
-    }
-    return ai;
+    return new GoogleGenAI({ apiKey });
 };
 
 // Enhanced helper function to parse timestamp strings to seconds
@@ -266,7 +260,7 @@ ${commentsBlock}
 `;
 };
 
-export const analyzeFetchedYouTubeComments = async (commentsBlock: string): Promise<AnalysisResult[]> => {
+export const analyzeFetchedYouTubeComments = async (commentsBlock: string, apiKey: string): Promise<AnalysisResult[]> => {
   if (!commentsBlock || commentsBlock.trim() === "") {
     console.warn("analyzeFetchedYouTubeComments called with empty or no comments block.");
     return [];
@@ -274,7 +268,7 @@ export const analyzeFetchedYouTubeComments = async (commentsBlock: string): Prom
 
   const prompt = createAnalysisPromptForFetchedComments(commentsBlock);
   try {
-    const client = getGenAIClient();
+    const client = getGenAIClient(apiKey);
     const response: GenerateContentResponse = await client.models.generateContent({
       model: MODEL_TEXT_ANALYSIS,
       contents: prompt,
@@ -351,13 +345,13 @@ export const analyzeFetchedYouTubeComments = async (commentsBlock: string): Prom
   } catch (error) {
     console.error("Error calling Gemini API for analysis:", error);
     if (error instanceof Error && (error.message.includes("API_KEY_INVALID") || error.message.includes("API key not valid"))) {
-        throw new Error("The Gemini API key is invalid or not provided. Please check your environment configuration (process.env.API_KEY).");
+        throw new Error("The provided Gemini API key is invalid. Please check the key and try again.");
     }
     throw new Error(`Failed to analyze comments with AI. ${error instanceof Error ? error.message : String(error)}`);
   }
 };
 
-export const fetchAndAnalyzeVideoComments = async (videoId: string): Promise<{commentsFetched: number, analysisResults: AnalysisResult[]}> => {
+export const fetchAndAnalyzeVideoComments = async (videoId: string, apiKey: string): Promise<{commentsFetched: number, analysisResults: AnalysisResult[]}> => {
   let fetchedComments: YouTubeComment[] = [];
   try {
     fetchedComments = await fetchYouTubeComments(videoId);
@@ -378,7 +372,7 @@ export const fetchAndAnalyzeVideoComments = async (videoId: string): Promise<{co
     .map(c => `${c.authorDisplayName}: ${c.textDisplay.replace(/\n/g, ' ')}`)
     .join('\n');
 
-  const analysisResultsFromAI = await analyzeFetchedYouTubeComments(commentsBlockForAnalysis);
+  const analysisResultsFromAI = await analyzeFetchedYouTubeComments(commentsBlockForAnalysis, apiKey);
 
   const resultsWithClipUrls: AnalysisResult[] = analysisResultsFromAI.map(result => {
     if (result.timestamp && result.timestamp.toLowerCase() !== "n/a") { // Ensure timestamp is valid before parsing

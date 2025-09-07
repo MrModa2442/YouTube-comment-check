@@ -26,13 +26,6 @@
   }
 }
 </script>
-<script>
-  // Polyfill process.env for browser environments to prevent crash.
-  // The app will gracefully handle the missing API key.
-  if (typeof process === 'undefined') {
-    window.process = { env: {} };
-  }
-</script>
 </head>
   <body class="bg-gray-900 text-white">
     <div id="root"></div>

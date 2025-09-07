@@ -1,15 +1,8 @@
 
-// IMPORTANT: YOU MUST REPLACE 'YOUR_YOUTUBE_DATA_API_KEY_HERE' WITH YOUR ACTUAL YOUTUBE DATA API V3 KEY
-const YOUTUBE_API_KEY = 'AIzaSyCej0EiF6FpXX8eCtcQA_c-Bf3i9y8DZSM';
-// Instructions to get a key: 
-// 1. Go to Google Cloud Console (https://console.cloud.google.com/).
-// 2. Create a new project or select an existing one.
-// 3. Enable the "YouTube Data API v3" for your project (APIs & Services > Library).
-// 4. Create credentials (APIs & Services > Credentials > Create credentials > API key).
-// 5. Copy the generated API key and paste it above, replacing 'YOUR_YOUTUBE_DATA_API_KEY_HERE'.
-// 6. IMPORTANT: For security, restrict this API key to only be usable by the "YouTube Data API v3" 
-//    and, if deploying, consider restricting it by IP address or HTTP referrer if possible, 
-//    though client-side exposure remains a risk.
+// The YouTube Data API v3 key is sourced from an environment variable.
+// It's crucial that this key is correctly configured in your project's environment settings
+// and has the "YouTube Data API v3" enabled in its restrictions in Google Cloud Console.
+const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
 
 const MAX_RESULTS_PER_PAGE = 100; // YouTube API allows up to 100
 const TARGET_TOTAL_COMMENTS = 2000; // Target number of comments to fetch
@@ -68,9 +61,9 @@ export interface YouTubeComment {
 }
 
 export const fetchYouTubeComments = async (videoId: string): Promise<YouTubeComment[]> => {
-  // Check if the API key is falsy (e.g., empty string)
   if (!YOUTUBE_API_KEY) {
-    throw new Error('YouTube Data API key is not configured. Please ensure it is not an empty string in services/youtubeService.ts.');
+    console.error("CRITICAL: YOUTUBE_API_KEY environment variable for YouTube Data API is not set.");
+    throw new Error("YouTube Data API Key is not configured in the environment. Please ensure the YOUTUBE_API_KEY environment variable is set.");
   }
 
   let allComments: YouTubeComment[] = [];

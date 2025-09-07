@@ -359,10 +359,12 @@ export const fetchAndAnalyzeVideoComments = async (videoId: string): Promise<{co
     fetchedComments = await fetchYouTubeComments(videoId);
   } catch (youtubeError) {
     console.error("Error fetching comments from YouTube:", youtubeError);
-    if (youtubeError instanceof Error && youtubeError.message.includes("API key")) {
-        throw new Error(`YouTube Data API Error: ${youtubeError.message}. Please ensure the YouTube API key in services/youtubeService.ts is correct.`);
+    // Re-throw the error from youtubeService, as it's descriptive enough for the UI to handle.
+    // Add a generic wrapper for non-Error types.
+    if (youtubeError instanceof Error) {
+      throw youtubeError;
     }
-    throw new Error(`Failed to fetch comments from YouTube: ${youtubeError instanceof Error ? youtubeError.message : String(youtubeError)}`);
+    throw new Error(`Failed to fetch comments from YouTube: ${String(youtubeError)}`);
   }
   
   if (!fetchedComments || fetchedComments.length === 0) {

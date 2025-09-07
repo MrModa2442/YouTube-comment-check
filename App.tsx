@@ -51,7 +51,15 @@ const App: React.FC = () => {
       setAnalysisResults(results);
     } catch (err) {
       console.error('Fetch/Analysis error:', err);
-      setError(err instanceof Error ? err.message : 'An unknown error occurred during fetching or analysis.');
+      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred during fetching or analysis.';
+      
+      if (errorMessage.includes("YouTube Data API Key is not configured")) {
+          setError("Configuration Error: The YouTube API Key is missing. Please ensure the YOUTUBE_API_KEY environment variable is set by the application host.");
+      } else if (errorMessage.includes("Gemini API Key is not configured")) {
+          setError("Configuration Error: The Gemini API Key is missing. Please ensure the API_KEY environment variable is set by the application host.");
+      } else {
+          setError(errorMessage);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -108,9 +116,31 @@ const App: React.FC = () => {
         </div>
 
         {error && (
-          <div role="alert" className="mt-4 p-3 bg-red-700 border border-red-900 text-red-100 rounded-md">
-            <p className="font-semibold">Error:</p>
-            <p>{error}</p>
+          <div role="alert" className="mt-4 p-4 bg-red-800 border border-red-900 text-red-100 rounded-lg shadow-lg">
+             <div className="flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-3 text-red-300 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                </svg>
+                <p className="font-semibold">An Error Occurred</p>
+            </div>
+            <p className="mt-2 ml-9">{error}</p>
+            {error.includes('YouTube API') && (error.includes('403') || error.includes('forbidden')) && (
+              <div className="mt-3 ml-9 pt-3 border-t border-red-700 text-sm">
+                <p className="font-bold mb-2 text-red-200">Troubleshooting a YouTube API "Forbidden" Error:</p>
+                <p className="mb-2">This error almost always means there's a problem with your YouTube API key setup in the Google Cloud Console, not with the app's code.</p>
+                <ul className="list-disc list-inside space-y-1 text-red-200">
+                  <li>
+                    <strong>Check API Key Restrictions:</strong> In Google Cloud Console, go to "APIs & Services" &gt; "Credentials". Click on your key. Under "API restrictions", ensure "YouTube Data API v3" is selected.
+                  </li>
+                  <li>
+                    <strong>Check API is Enabled:</strong> In "APIs & Services" &gt; "Library", search for "YouTube Data API v3" and make sure it's enabled for your project.
+                  </li>
+                  <li>
+                    <strong>Check Billing:</strong> Ensure your Google Cloud project is linked to an active billing account. Some APIs require this even for free tiers.
+                  </li>
+                </ul>
+              </div>
+            )}
           </div>
         )}
         

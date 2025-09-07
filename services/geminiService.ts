@@ -1,3 +1,4 @@
+
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 import { AnalysisResult } from '../types';
 import { fetchYouTubeComments, YouTubeComment } from './youtubeService';
@@ -5,17 +6,18 @@ import { fetchYouTubeComments, YouTubeComment } from './youtubeService';
 const MODEL_TEXT_ANALYSIS = "gemini-2.5-flash";
 
 /**
- * Creates an instance of the GoogleGenAI client with the provided API key.
- * Throws an error if the API key is not provided.
- * @param {string} apiKey The user's Gemini API key.
+ * Creates an instance of the GoogleGenAI client.
+ * The API key is sourced from environment variables, as per project guidelines.
+ * Throws an error if the API key is not configured in the environment.
  * @returns {GoogleGenAI} The initialized GoogleGenAI client.
  */
-const getGenAIClient = (apiKey: string): GoogleGenAI => {
-    if (!apiKey) {
-        console.error("CRITICAL: API_KEY for Gemini was not provided to getGenAIClient.");
-        throw new Error("Gemini API Key is not configured. Please provide the API Key in the input field.");
+const getGenAIClient = (): GoogleGenAI => {
+    // API key is sourced from environment variables, as per project guidelines.
+    if (!process.env.API_KEY) {
+        console.error("CRITICAL: API_KEY environment variable for Gemini is not set.");
+        throw new Error("Gemini API Key is not configured in the environment.");
     }
-    return new GoogleGenAI({ apiKey });
+    return new GoogleGenAI({ apiKey: process.env.API_KEY });
 };
 
 // Enhanced helper function to parse timestamp strings to seconds
@@ -260,7 +262,7 @@ ${commentsBlock}
 `;
 };
 
-export const analyzeFetchedYouTubeComments = async (commentsBlock: string, apiKey: string): Promise<AnalysisResult[]> => {
+export const analyzeFetchedYouTubeComments = async (commentsBlock: string): Promise<AnalysisResult[]> => {
   if (!commentsBlock || commentsBlock.trim() === "") {
     console.warn("analyzeFetchedYouTubeComments called with empty or no comments block.");
     return [];
@@ -268,7 +270,7 @@ export const analyzeFetchedYouTubeComments = async (commentsBlock: string, apiKe
 
   const prompt = createAnalysisPromptForFetchedComments(commentsBlock);
   try {
-    const client = getGenAIClient(apiKey);
+    const client = getGenAIClient();
     const response: GenerateContentResponse = await client.models.generateContent({
       model: MODEL_TEXT_ANALYSIS,
       contents: prompt,
@@ -351,7 +353,7 @@ export const analyzeFetchedYouTubeComments = async (commentsBlock: string, apiKe
   }
 };
 
-export const fetchAndAnalyzeVideoComments = async (videoId: string, apiKey: string): Promise<{commentsFetched: number, analysisResults: AnalysisResult[]}> => {
+export const fetchAndAnalyzeVideoComments = async (videoId: string): Promise<{commentsFetched: number, analysisResults: AnalysisResult[]}> => {
   let fetchedComments: YouTubeComment[] = [];
   try {
     fetchedComments = await fetchYouTubeComments(videoId);
@@ -372,7 +374,7 @@ export const fetchAndAnalyzeVideoComments = async (videoId: string, apiKey: stri
     .map(c => `${c.authorDisplayName}: ${c.textDisplay.replace(/\n/g, ' ')}`)
     .join('\n');
 
-  const analysisResultsFromAI = await analyzeFetchedYouTubeComments(commentsBlockForAnalysis, apiKey);
+  const analysisResultsFromAI = await analyzeFetchedYouTubeComments(commentsBlockForAnalysis);
 
   const resultsWithClipUrls: AnalysisResult[] = analysisResultsFromAI.map(result => {
     if (result.timestamp && result.timestamp.toLowerCase() !== "n/a") { // Ensure timestamp is valid before parsing

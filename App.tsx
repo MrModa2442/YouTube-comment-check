@@ -17,7 +17,6 @@ const extractVideoId = (url: string): string | null => {
 
 const App: React.FC = () => {
   const [youtubeUrl, setYoutubeUrl] = useState<string>('');
-  const [geminiApiKey, setGeminiApiKey] = useState<string>('');
   const [analysisResults, setAnalysisResults] = useState<AnalysisResult[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -33,11 +32,6 @@ const App: React.FC = () => {
       return;
     }
     
-    if (!geminiApiKey.trim()) {
-      setError('Please enter your Gemini API Key.');
-      return;
-    }
-
     const videoId = extractVideoId(youtubeUrl);
     if (!videoId) {
       setError('Invalid YouTube Video URL. Please check the URL and try again.');
@@ -47,7 +41,7 @@ const App: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const { commentsFetched, analysisResults: results } = await fetchAndAnalyzeVideoComments(videoId, geminiApiKey);
+      const { commentsFetched, analysisResults: results } = await fetchAndAnalyzeVideoComments(videoId);
       setFetchedCommentsCount(commentsFetched);
       if (commentsFetched === 0 && results.length === 0) {
          setError("No comments were fetched from the video, or the video has no comments. Analysis was not performed.");
@@ -61,7 +55,7 @@ const App: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [youtubeUrl, geminiApiKey]);
+  }, [youtubeUrl]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 py-8 px-4 sm:px-6 lg:px-8 flex flex-col items-center">
@@ -92,31 +86,13 @@ const App: React.FC = () => {
               required
             />
           </div>
-          <div>
-            <label htmlFor="geminiApiKey" className="block text-sm font-medium text-gray-300 mb-1">
-              Gemini API Key (Required)
-            </label>
-            <Input
-              id="geminiApiKey"
-              type="password"
-              placeholder="Enter your Gemini API Key"
-              value={geminiApiKey}
-              onChange={(e) => setGeminiApiKey(e.target.value)}
-              className="bg-gray-700 border-gray-600 placeholder-gray-500 text-white focus:ring-purple-500 focus:border-purple-500"
-              aria-describedby="geminiApiHelp"
-              required
-            />
-            <p id="geminiApiHelp" className="mt-1 text-xs text-gray-400">
-              Your Gemini API key is required for analysis and is not stored. Get a key from Google AI Studio.
-            </p>
-          </div>
         </div>
 
 
         <div className="flex flex-col sm:flex-row sm:justify-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
           <Button
             onClick={handleFetchAndAnalyze}
-            disabled={isLoading || !youtubeUrl.trim() || !geminiApiKey.trim()}
+            disabled={isLoading || !youtubeUrl.trim()}
             className="w-full sm:w-auto bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
             aria-label="Fetch comments from the YouTube URL and analyze them for music inquiries"
           >
@@ -144,7 +120,7 @@ const App: React.FC = () => {
           </div>
         )}
 
-        {!isLoading && !error && youtubeUrl && geminiApiKey && fetchedCommentsCount === 0 && analysisResults.length === 0 && !isLoading && (
+        {!isLoading && !error && youtubeUrl && fetchedCommentsCount === 0 && analysisResults.length === 0 && !isLoading && (
              <div className="mt-6 p-4 bg-gray-700 rounded-md text-center text-gray-300">
                 <p>No comments were fetched. This could be due to the video having no comments, comments being disabled, or an issue with the YouTube API (e.g., quota, permissions).</p>
              </div>
@@ -163,15 +139,15 @@ const App: React.FC = () => {
           </section>
         )}
          
-         {!isLoading && !error && (!youtubeUrl || !geminiApiKey) && (
+         {!isLoading && !error && !youtubeUrl && (
             <div className="mt-8 text-center text-gray-400">
-                <p>Enter a YouTube video URL and your Gemini API Key, then click "Fetch & Analyze Comments" to begin.</p>
+                <p>Enter a YouTube video URL, then click "Fetch & Analyze Comments" to begin.</p>
             </div>
          )}
       </main>
       <footer className="mt-12 text-center text-sm text-gray-500">
         <p>&copy; {new Date().getFullYear()} AI Music Comment Analyzer. For demonstration purposes only.</p>
-        <p className="mt-1">Requires user-provided Gemini API Key and a pre-configured YouTube Data API Key in `services/youtubeService.ts`.</p>
+        <p className="mt-1">Powered by the YouTube Data API and the Gemini API.</p>
       </footer>
     </div>
   );

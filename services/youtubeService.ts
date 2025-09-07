@@ -1,5 +1,6 @@
+
 // IMPORTANT: YOU MUST REPLACE 'YOUR_YOUTUBE_DATA_API_KEY_HERE' WITH YOUR ACTUAL YOUTUBE DATA API V3 KEY
-const YOUTUBE_API_KEY = 'AIzaSyAADtTYvYOE_jPaVRyPoV7qujzjkNISpAk'; // API Key updated
+const YOUTUBE_API_KEY = 'AIzaSyCej0EiF6FpXX8eCtcQA_c-Bf3i9y8DZSM';
 // Instructions to get a key: 
 // 1. Go to Google Cloud Console (https://console.cloud.google.com/).
 // 2. Create a new project or select an existing one.

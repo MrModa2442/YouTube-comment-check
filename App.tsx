@@ -46,7 +46,7 @@ const App: React.FC = () => {
       if (commentsFetched === 0 && results.length === 0) {
          setError("No comments were fetched from the video, or the video has no comments. Analysis was not performed.");
       } else if (results.length === 0 && commentsFetched > 0) {
-        // setError will be handled by the specific message below for no results
+        // The message for this case is handled further down in the JSX
       }
       setAnalysisResults(results);
     } catch (err) {
@@ -124,6 +124,15 @@ const App: React.FC = () => {
                 <p className="font-semibold">An Error Occurred</p>
             </div>
             <p className="mt-2 ml-9">{error}</p>
+            {(error.includes('API Key is missing') || error.includes('API Key is not configured')) && (
+               <div className="mt-4 ml-9 pt-3 border-t border-red-700 text-sm">
+                <p className="font-bold mb-2 text-red-200">What does this mean?</p>
+                <p className="mb-3 text-red-200">
+                  This application requires API keys to be configured by its host to communicate with YouTube and Google AI services. 
+                  Since they are not available, the application cannot fetch live data. Please ensure the necessary environment variables (YOUTUBE_API_KEY and API_KEY) are set by the application host.
+                </p>
+              </div>
+            )}
             {error.includes('YouTube API') && (error.includes('403') || error.includes('forbidden')) && (
               <div className="mt-3 ml-9 pt-3 border-t border-red-700 text-sm">
                 <p className="font-bold mb-2 text-red-200">Troubleshooting a YouTube API "Forbidden" Error:</p>

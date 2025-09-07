@@ -10,7 +10,7 @@ if (!GEMINI_API_KEY) {
 }
 
 const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY! });
-const MODEL_TEXT_ANALYSIS = "gemini-2.5-flash-preview-04-17";
+const MODEL_TEXT_ANALYSIS = "gemini-2.5-flash";
 
 // Enhanced helper function to parse timestamp strings to seconds
 const parseTimestampToSeconds = (timestampStr: string): number | null => {

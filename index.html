@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -23,9 +22,16 @@
     "react/": "https://esm.sh/react@^19.1.0/",
     "react": "https://esm.sh/react@^19.1.0",
     "react-dom/": "https://esm.sh/react-dom@^19.1.0/",
-    "@google/genai": "https://esm.sh/@google/genai@^1.3.0"
+    "@google/genai": "https://esm.run/@google/genai@^1.3.0"
   }
 }
+</script>
+<script>
+  // Polyfill process.env for browser environments to prevent crash.
+  // The app will gracefully handle the missing API key.
+  if (typeof process === 'undefined') {
+    window.process = { env: {} };
+  }
 </script>
 </head>
   <body class="bg-gray-900 text-white">
@@ -33,4 +39,3 @@
     <script type="module" src="/index.tsx"></script>
   </body>
 </html>
-    

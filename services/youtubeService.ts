@@ -1,8 +1,4 @@
 
-// The YouTube Data API v3 key is sourced from an environment variable.
-// It's crucial that this key is correctly configured in your project's environment settings
-// and has the "YouTube Data API v3" enabled in its restrictions in Google Cloud Console.
-const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
 
 const MAX_RESULTS_PER_PAGE = 100; // YouTube API allows up to 100
 const TARGET_TOTAL_COMMENTS = 2000; // Target number of comments to fetch
@@ -60,10 +56,10 @@ export interface YouTubeComment {
   authorDisplayName: string;
 }
 
-export const fetchYouTubeComments = async (videoId: string): Promise<YouTubeComment[]> => {
-  if (!YOUTUBE_API_KEY) {
-    console.error("CRITICAL: YOUTUBE_API_KEY environment variable for YouTube Data API is not set.");
-    throw new Error("YouTube Data API Key is not configured in the environment. Please ensure the YOUTUBE_API_KEY environment variable is set.");
+export const fetchYouTubeComments = async (videoId: string, apiKey: string): Promise<YouTubeComment[]> => {
+  if (!apiKey) {
+    console.error("CRITICAL: YouTube Data API key was not provided to fetchYouTubeComments function.");
+    throw new Error("YouTube Data API Key is not configured. Please enter your key in the input field.");
   }
 
   let allComments: YouTubeComment[] = [];
@@ -71,7 +67,7 @@ export const fetchYouTubeComments = async (videoId: string): Promise<YouTubeComm
   let pagesFetched = 0;
 
   do {
-    let apiUrl = `https://www.googleapis.com/youtube/v3/commentThreads?part=snippet&videoId=${videoId}&key=${YOUTUBE_API_KEY}&maxResults=${MAX_RESULTS_PER_PAGE}&order=relevance&textFormat=plainText`;
+    let apiUrl = `https://www.googleapis.com/youtube/v3/commentThreads?part=snippet&videoId=${videoId}&key=${apiKey}&maxResults=${MAX_RESULTS_PER_PAGE}&order=relevance&textFormat=plainText`;
     if (nextPageToken) {
       apiUrl += `&pageToken=${nextPageToken}`;
     }

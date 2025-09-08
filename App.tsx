@@ -17,6 +17,8 @@ const extractVideoId = (url: string): string | null => {
 
 const App: React.FC = () => {
   const [youtubeUrl, setYoutubeUrl] = useState<string>('');
+  const [youtubeApiKey, setYoutubeApiKey] = useState<string>('');
+  const [geminiApiKey, setGeminiApiKey] = useState<string>('');
   const [analysisResults, setAnalysisResults] = useState<AnalysisResult[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -31,6 +33,14 @@ const App: React.FC = () => {
       setError('Please enter a YouTube Video URL.');
       return;
     }
+    if (!youtubeApiKey.trim()) {
+      setError('Please enter your YouTube API Key.');
+      return;
+    }
+    if (!geminiApiKey.trim()) {
+      setError('Please enter your Gemini API Key.');
+      return;
+    }
     
     const videoId = extractVideoId(youtubeUrl);
     if (!videoId) {
@@ -41,7 +51,7 @@ const App: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const { commentsFetched, analysisResults: results } = await fetchAndAnalyzeVideoComments(videoId);
+      const { commentsFetched, analysisResults: results } = await fetchAndAnalyzeVideoComments(videoId, youtubeApiKey, geminiApiKey);
       setFetchedCommentsCount(commentsFetched);
       if (commentsFetched === 0 && results.length === 0) {
          setError("No comments were fetched from the video, or the video has no comments. Analysis was not performed.");
@@ -54,16 +64,16 @@ const App: React.FC = () => {
       const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred during fetching or analysis.';
       
       if (errorMessage.includes("YouTube Data API Key is not configured")) {
-          setError("Configuration Error: The YouTube API Key is missing. Please ensure the YOUTUBE_API_KEY environment variable is set by the application host.");
+          setError("Please provide your YouTube API key in the designated field.");
       } else if (errorMessage.includes("Gemini API Key is not configured")) {
-          setError("Configuration Error: The Gemini API Key is missing. Please ensure the API_KEY environment variable is set by the application host.");
+          setError("Please provide your Gemini API key in the designated field.");
       } else {
           setError(errorMessage);
       }
     } finally {
       setIsLoading(false);
     }
-  }, [youtubeUrl]);
+  }, [youtubeUrl, youtubeApiKey, geminiApiKey]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 py-8 px-4 sm:px-6 lg:px-8 flex flex-col items-center">
@@ -94,13 +104,43 @@ const App: React.FC = () => {
               required
             />
           </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="youtubeApiKey" className="block text-sm font-medium text-gray-300 mb-1">
+                YouTube API Key (Required)
+              </label>
+              <Input
+                id="youtubeApiKey"
+                type="password"
+                placeholder="Enter your YouTube Data API v3 Key"
+                value={youtubeApiKey}
+                onChange={(e) => setYoutubeApiKey(e.target.value)}
+                className="bg-gray-700 border-gray-600 placeholder-gray-500 text-white focus:ring-purple-500 focus:border-purple-500"
+                required
+              />
+            </div>
+            <div>
+              <label htmlFor="geminiApiKey" className="block text-sm font-medium text-gray-300 mb-1">
+                Gemini API Key (Required)
+              </label>
+              <Input
+                id="geminiApiKey"
+                type="password"
+                placeholder="Enter your Google Gemini API Key"
+                value={geminiApiKey}
+                onChange={(e) => setGeminiApiKey(e.target.value)}
+                className="bg-gray-700 border-gray-600 placeholder-gray-500 text-white focus:ring-purple-500 focus:border-purple-500"
+                required
+              />
+            </div>
+          </div>
         </div>
 
 
         <div className="flex flex-col sm:flex-row sm:justify-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
           <Button
             onClick={handleFetchAndAnalyze}
-            disabled={isLoading || !youtubeUrl.trim()}
+            disabled={isLoading || !youtubeUrl.trim() || !youtubeApiKey.trim() || !geminiApiKey.trim()}
             className="w-full sm:w-auto bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
             aria-label="Fetch comments from the YouTube URL and analyze them for music inquiries"
           >
@@ -124,15 +164,6 @@ const App: React.FC = () => {
                 <p className="font-semibold">An Error Occurred</p>
             </div>
             <p className="mt-2 ml-9">{error}</p>
-            {(error.includes('API Key is missing') || error.includes('API Key is not configured')) && (
-               <div className="mt-4 ml-9 pt-3 border-t border-red-700 text-sm">
-                <p className="font-bold mb-2 text-red-200">What does this mean?</p>
-                <p className="mb-3 text-red-200">
-                  This application requires API keys to be configured by its host to communicate with YouTube and Google AI services. 
-                  Since they are not available, the application cannot fetch live data. Please ensure the necessary environment variables (YOUTUBE_API_KEY and API_KEY) are set by the application host.
-                </p>
-              </div>
-            )}
             {error.includes('YouTube API') && (error.includes('403') || error.includes('forbidden')) && (
               <div className="mt-3 ml-9 pt-3 border-t border-red-700 text-sm">
                 <p className="font-bold mb-2 text-red-200">Troubleshooting a YouTube API "Forbidden" Error:</p>
@@ -180,7 +211,7 @@ const App: React.FC = () => {
          
          {!isLoading && !error && !youtubeUrl && (
             <div className="mt-8 text-center text-gray-400">
-                <p>Enter a YouTube video URL, then click "Fetch & Analyze Comments" to begin.</p>
+                <p>Enter a YouTube video URL and your API keys, then click "Fetch & Analyze Comments" to begin.</p>
             </div>
          )}
       </main>

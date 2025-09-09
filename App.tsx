@@ -15,6 +15,51 @@ const extractVideoId = (url: string): string | null => {
   return match ? match[1] : null;
 };
 
+// Generates mock results for the demo mode
+const generateMockResults = (videoId: string): AnalysisResult[] => {
+  const usernames = ["MusicLover88", "ChillVibes", "TimestampHunter", "SoundSeeker", "CuriousCat"];
+  const comments = [
+    "What's the song at {timestamp}? It's amazing!",
+    "Track ID for {timestamp} please?",
+    "Love that beat around {timestamp}, anyone know it?",
+    "The instrumental starting at {timestamp} is incredible! Name?",
+    "Can someone ID the track playing at {timestamp}? 🙏",
+    "{timestamp} 🔥🔥 what is this?",
+    "Seriously need to know the music at {timestamp}.",
+  ];
+
+  const results: AnalysisResult[] = [];
+  const numResults = Math.floor(Math.random() * 4) + 4; // 4 to 7 results
+
+  for (let i = 0; i < numResults; i++) {
+    const minutes = Math.floor(Math.random() * 5);
+    const seconds = Math.floor(Math.random() * 59) + 1;
+    const formattedSeconds = seconds < 10 ? `0${seconds}` : String(seconds);
+    const timestamp = `${minutes}:${formattedSeconds}`;
+    
+    const randomUsername = usernames[Math.floor(Math.random() * usernames.length)];
+    const randomCommentTemplate = comments[Math.floor(Math.random() * comments.length)];
+    const finalComment = randomCommentTemplate.replace('{timestamp}', timestamp);
+    
+    const totalSeconds = minutes * 60 + seconds;
+    const clipUrl = `https://www.youtube.com/watch?v=${videoId}&t=${totalSeconds}s`;
+
+    results.push({
+      username: randomUsername,
+      comment: finalComment,
+      timestamp: timestamp,
+      clipUrl: clipUrl,
+    });
+  }
+  // Sort by timestamp for better presentation
+  return results.sort((a, b) => { 
+      const [aMin, aSec] = a.timestamp.split(':').map(Number);
+      const [bMin, bSec] = b.timestamp.split(':').map(Number);
+      return (aMin * 60 + aSec) - (bMin * 60 + bSec);
+  });
+};
+
+
 const App: React.FC = () => {
   const [youtubeUrl, setYoutubeUrl] = useState<string>('');
   const [youtubeApiKey, setYoutubeApiKey] = useState<string>('');
@@ -74,6 +119,30 @@ const App: React.FC = () => {
       setIsLoading(false);
     }
   }, [youtubeUrl, youtubeApiKey, geminiApiKey]);
+
+  const handleRunDemo = useCallback(async () => {
+    setError(null);
+    setAnalysisResults([]);
+    setFetchedCommentsCount(0);
+    setIsLoading(true);
+
+    const demoVideoUrl = 'https://www.youtube.com/watch?v=3_g2un5M350';
+    const demoVideoId = '3_g2un5M350';
+
+    setYoutubeUrl(demoVideoUrl);
+    setYoutubeApiKey('DEMO_MODE_YOUTUBE_API_KEY_HIDDEN');
+    setGeminiApiKey('DEMO_MODE_GEMINI_API_KEY_HIDDEN');
+
+    // Simulate API call latency
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
+    const mockResults = generateMockResults(demoVideoId);
+    const commentsFetched = Math.floor(Math.random() * 250) + 150; // Simulate fetching 150-400 comments
+
+    setFetchedCommentsCount(commentsFetched);
+    setAnalysisResults(mockResults);
+    setIsLoading(false);
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 py-8 px-4 sm:px-6 lg:px-8 flex flex-col items-center">
@@ -137,23 +206,32 @@ const App: React.FC = () => {
         </div>
 
 
-        <div className="flex flex-col sm:flex-row sm:justify-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
-          <Button
-            onClick={handleFetchAndAnalyze}
-            disabled={isLoading || !youtubeUrl.trim() || !youtubeApiKey.trim() || !geminiApiKey.trim()}
-            className="w-full sm:w-auto bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
-            aria-label="Fetch comments from the YouTube URL and analyze them for music inquiries"
-          >
-            {isLoading ? (
-              <>
-                <LoadingSpinner className="mr-2 h-5 w-5 animate-spin" />
-                Fetching & Analyzing...
-              </>
-            ) : (
-              'Fetch & Analyze Comments'
-            )}
-          </Button>
-        </div>
+        <div className="flex flex-col sm:flex-row items-center gap-4 pt-2">
+            <Button
+              onClick={handleFetchAndAnalyze}
+              disabled={isLoading || !youtubeUrl.trim() || !youtubeApiKey.trim() || !geminiApiKey.trim()}
+              className="w-full sm:w-auto bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+              aria-label="Fetch comments from the YouTube URL and analyze them for music inquiries"
+            >
+              {isLoading ? (
+                <>
+                  <LoadingSpinner className="mr-2 h-5 w-5 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                'Fetch & Analyze'
+              )}
+            </Button>
+            <span className="text-gray-400 font-medium">or</span>
+            <Button
+              onClick={handleRunDemo}
+              disabled={isLoading}
+              className="w-full sm:w-auto bg-gray-600 hover:bg-gray-700 text-white"
+              aria-label="Run a demonstration with sample data without using API keys"
+            >
+              Run a Demo
+            </Button>
+          </div>
 
         {error && (
           <div role="alert" className="mt-4 p-4 bg-red-800 border border-red-900 text-red-100 rounded-lg shadow-lg">
@@ -211,7 +289,7 @@ const App: React.FC = () => {
          
          {!isLoading && !error && !youtubeUrl && (
             <div className="mt-8 text-center text-gray-400">
-                <p>Enter a YouTube video URL and your API keys, then click "Fetch & Analyze Comments" to begin.</p>
+                <p>Enter a YouTube video URL and your API keys, then click "Fetch & Analyze" to begin, or run a demo.</p>
             </div>
          )}
       </main>
